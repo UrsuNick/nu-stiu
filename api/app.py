@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, session, redirect
 from supabase import create_client, Client
+from requests import post, get
 
 app = Flask(__name__)
 app.secret_key = "0"
@@ -32,18 +33,22 @@ def login():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-        data = supabase.from_("users").select("*").eq("user_name", username).execute()
-
-        if data.data == []:
-
-            data, count = (
-                supabase.table("users")
-                .insert({"user_name": username, "password": password})
-                .execute()
-            )
-            return redirect("/login")
+        recaptcha_response = request.form.get('g-recaptcha-response')
+        if recaptcha_response:
+            payload = {'secret': "6Le1jv8pAAAAABDOLDUvaPZ72FuBvGKZC4OBqdJw",'response': recaptcha_response}
+            response = post('https://www.google.com/recaptcha/api/siteverify', data=payload)
+            result = response.json()
+            if result.get('success'):
+                username = request.form["username"]
+                password = request.form["password"]
+                data = supabase.from_("users").select("*").eq("user_name", username).execute()
+                if data.data == []:
+                    data, _ = (
+                        supabase.table("users")
+                        .insert({"user_name": username, "password": password})
+                        .execute()
+                    )
+                    return redirect("/login")
     return render_template("register.html")
 
 
