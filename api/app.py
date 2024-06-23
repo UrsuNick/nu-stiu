@@ -60,9 +60,14 @@ def log_out():
     return redirect("/login")
 
 
-def test():
-    data = supabase.from_("users").select("user_name, password").execute()
-    print(data)
+@app.errorhandler(404)
+def page_404(error):
+    return 'This page does not exist', 404
 
+@app.errorhandler(500)
+def page_500(error):
+    return 'Internal server error', 500
 
-test()
+@app.errorhandler(400)
+def page_400(error):
+    return 'Bad request error', 400
